@@ -3,8 +3,6 @@ import os
 import pytest
 import httpx
 from dotenv import load_dotenv
-from core.users import UsersAPI
-from core.user import UserAPI
 from utils.tg_report import send_telegram_report
 
 load_dotenv()
@@ -22,17 +20,22 @@ def auth_client():
     base_url = os.getenv("BASE_URL")
     with httpx.Client(base_url=base_url, timeout=10.0) as client:
         # Прямой запрос на логин без сторонних классов
-        login_response = client.post("/web/v2/users/login_with_password/", json={
-            "username": "+998998987882",
-            "password": "Sh2004Sh"
+        send_otp_response = client.post("/api/v1/auth/send-otp", json={
+            "phone": "998000000000"
         })
 
-        if login_response.status_code == 200:
-            token = login_response.json().get("token")
+        if send_otp_response.status_code == 200:
+            verify_otp_response = client.post("/api/v1/auth/verify-otp", json={})
+            if verify_otp_response.status_code == 200:
+                token = verify_otp_response.json()["accessToken"]
+            else:
+                pytest.exit(f"Setup failed: Could not login. Status: {verify_otp_response.status_code}")
+
             # Навешиваем токен на все будущие запросы этого клиента
             client.headers.update({"Authorization": f"Token {token}"})
+
         else:
-            pytest.exit(f"Setup failed: Could not login. Status: {login_response.status_code}")
+            pytest.exit(f"Setup failed: Could not login. Status: {send_otp_response.status_code}")
 
         yield client
 
