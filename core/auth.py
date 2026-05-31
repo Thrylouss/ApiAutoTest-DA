@@ -1,4 +1,4 @@
-
+# core/auth.py
 
 class AuthAPI:
     def __init__(self, client):
@@ -15,3 +15,7 @@ class AuthAPI:
             "code": code,
             "phone": phone
         })
+
+    def get_me(self):
+        # Метод НЕ принимает token, так как он в self.client.headers
+        return self.client.get("/api/v1/accounts/me")

@@ -10,8 +10,9 @@ class TestSearch:
         response = search_api.history()
         assert response.status_code == 200
         data = response.json()
-        assert "success" in data
-        assert isinstance(data.get("data"), list)
+        assert data.get("success") is True
+        # Правильный путь: data -> data -> history
+        assert isinstance(data.get("data", {}).get("history"), list)
 
     def test_search_suggest_success(self, auth_client):
         search_api = SearchAPI(auth_client)
@@ -37,7 +38,10 @@ class TestSearch:
         assert isinstance(data["data"], list)
         assert any("name" in item and "EVOS" in item["name"] for item in data["data"])
 
-    def test_search_results_no_query(self, auth_client):
+    def test_search_results_no_query(self, auth_client):  # ВАЖНО: используй auth_client!
         search_api = SearchAPI(auth_client)
+        # Если ты вызываешь поиск без параметров, проверь, что путь верный
         response = search_api.search("", page=1, per_page=10)
+
+        # Если 302 всё еще здесь, проверь URL в поиске (может, он требует авторизации?)
         assert response.status_code in (400, 422)
